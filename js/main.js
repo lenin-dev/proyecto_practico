@@ -16,6 +16,7 @@ var navMenu = document.querySelector(".menu");
 var menuMovil = document.querySelector(".mobile-menu");
 
 // carrito
+var closeDetailProd = document.querySelector('.title-container');
 var navOrdenCar = document.querySelector(".navbar-shopping-cart");
 var productoDetalle = document.querySelector(".product-detail");
 var containerDetail = document.querySelector("#order-content-product");
@@ -29,31 +30,32 @@ var datailPrice = document.querySelector(".price");
 var detailName = document.querySelector(".name");
 var detailDescription = document.querySelector(".content-description");
 var totalDetail = document.querySelector("#totalDetail");
+var addCarProd = document.getElementById("add-car-secon");
 
 // --------------------------- GET PRODUCTOS FETCH ---------------------------
-function getProducts() {
-    const xhr = new XMLHttpRequest();
-    const url = "./js/products.txt";
 
-    xhr.open("GET", url);
-    xhr.send();
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState == 4 && xhr.status == 200) {
-            lista = this.responseText;
-            mostrarProductos(JSON.parse(this.responseText));
+var oi = document.querySelectorAll('.pocess');
+for (let index = 0; index < oi.length; index++) {
+    oi[index].addEventListener("click", function() {
+        if(this.id != "all") {
+            fetchData(`${API}/products/category/${this.id}`);
+        } else {
+            fetchData(`${API}/products/`);
         }
-    }
+    });
 }
 
-fetch(`${API}/products`)
-    .then(response => response.json())
-    .then(productos => {
-        lista = productos;
-        mostrarProductos(productos);
-    })
+function fetchData(urlApi) {
+    fetch(urlApi)
+        .then(response => response.json())
+        .then(products => {
+            lista = products;
+            totalLimit = products.length;
+            mostrarProductos(products);
+        })
+}
 
-// --------------------------- MOSTRAR PRODUCTOS ---------------------------
-// getProducts();
+fetchData(`${API}/products`)
 
 
 // --------------------------- MENU LATERAL DERECHO DE SESIONES PC ---------------------------
@@ -101,18 +103,23 @@ navOrdenCar.addEventListener("click", function () {
     productoDetalle.classList.toggle('ocultar');
 });
 
+closeDetailProd.addEventListener("click", () => {
+    productoDetalle.classList.toggle('ocultar');
+})
+
+
 // --------------------------- PRODUCTOS ---------------------------
 function mostrarProductos(lista) {
     const contenedorProd = document.querySelector(".cards-container");
+    contenedorProd.replaceChildren();
 
     for (listProd of lista) {
-
         var div1 = document.createElement('div');
             div1.classList.add('product-card');
 
             var img1 = document.createElement('img');
             img1.setAttribute("src", listProd.image);
-            img1.setAttribute("onclick", "openDetailProduc("+JSON.stringify(listProd.image)+","+JSON.stringify(listProd.price)+","+JSON.stringify(listProd.title)+","+JSON.stringify(listProd.description)+")");
+            img1.setAttribute("onclick", "openDetailProduc(" + listProd.id +", "+JSON.stringify(listProd.image)+","+JSON.stringify(listProd.price)+","+JSON.stringify(listProd.title)+","+JSON.stringify(listProd.description)+")");
             div1.appendChild(img1);
         
             var div2 = document.createElement('div');
@@ -129,15 +136,16 @@ function mostrarProductos(lista) {
 
                 var button = document.createElement('button');
                     button.setAttribute("type", "button");
-                    button.setAttribute("onclick", "addDetail("+ listProd.id +","+listProd.price+")");
+                    button.setAttribute("onclick", "addDetail("+ listProd.id +","+ listProd.price +")");
                     var img2 = document.createElement('img');
+                    img2.setAttribute("class", "button-active");
                     img2.setAttribute("src", "./icons/bt_add_to_cart.svg");
                     img2.setAttribute("alt", "boton de agregar al carrito");
                     button.appendChild(img2);
                 div2.appendChild(button);
 
         div1.appendChild(div2);
-        contenedorProd.append(div1);
+        contenedorProd.appendChild(div1);
     }
 }
 
@@ -152,11 +160,11 @@ function addDetail(id, price) {
     if(results == "") {
         addProductDetail(id);
     } else {
-        var priceX = document.querySelector(`[id='${price}']`).innerText;
+        var priceX = document.querySelector(`[id='${id}-price']`).innerText;
         let count = document.getElementById(id).innerText;
         let num = Number(priceX) + price;
         document.getElementById(id).innerHTML = ++count;
-        document.querySelector(`[id='${price}']`).innerHTML = num.toFixed(2);
+        document.querySelector(`[id='${id}-price']`).innerHTML = num.toFixed(2);
         
         modiyListCount(id, count);
         ViewPrice(price);
@@ -169,7 +177,6 @@ function modiyListCount(id, count) {
             copiaLista[index].count = count;
             break;
         }
-        console.log('1s');
     }
 }
 
@@ -202,8 +209,8 @@ function ViewProductsDetail(list) {
                             </figure>
                             <p>${list[index].title}</p>
                             <p>X<span id="${list[index].id}">1</span></p>
-                            <p>$<span id="${list[index].price}">${num.toFixed(2)}</span></p>
-                            <img src="./icons/icon_close.png" alt="close">
+                            <p>$<span id="${list[index].id}-price">${num.toFixed(2)}</span></p>
+                            <img src="./icons/icon_close.png"id="${list[index].id}-close" alt="close">
                         </div>`;
     }
     containerDetail.innerHTML += orderDetail;
@@ -212,28 +219,23 @@ function ViewProductsDetail(list) {
 
 function ViewPrice(price) {
     total = total + Number(price);
-    totalDetail.innerText = "$" + total.toFixed(2);
+    totalDetail.innerText = total.toFixed(2);
 }
-
-// function accionReemplazar() {
-//     for(resp of copiaLista) {
-
-//     }
-// }
-
 
 // --------------------------- DETALLE DEL PRODUCTO ---------------------------
 imgDetail.addEventListener("click", function () { detailProducOne.classList.add("ocultar"); });
 
-function openDetailProduc(img, price, name, description) {
+function openDetailProduc(id, img, price, name, description) {
     const isMobileMenuClose = productoDetalle.classList.contains('ocultar');
     const isPcPanelSesion = panelEmail.classList.contains('ocultar');
 
     imgDetailProduct.src = img;
     datailPrice.innerText = "$" + price;
+    datailPrice.setAttribute('id', price);
     detailName.innerText = name;
+    detailName.setAttribute("id", id);
     detailDescription.innerText = description;
-
+    addCarProd.setAttribute("onclick", "addDetail(" + detailName.id +", "+datailPrice.id+")");;
 
     if (!isMobileMenuClose) {
         productoDetalle.classList.add('ocultar');
@@ -243,3 +245,4 @@ function openDetailProduc(img, price, name, description) {
 
     detailProducOne.classList.remove("ocultar");
 }
+
